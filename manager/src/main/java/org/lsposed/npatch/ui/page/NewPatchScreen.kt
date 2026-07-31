@@ -310,7 +310,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
             SelectionItem(
                 selected = viewModel.useManager,
                 onClick = { viewModel.useManager = true },
-                icon = Icons.Outlined.Api,
+                icon = Icons.Outlined.Devices,
                 title = stringResource(R.string.patch_local),
                 desc = stringResource(R.string.patch_local_desc)
             )
@@ -337,11 +337,12 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
         )
         SettingsCheckBox(
             modifier = Modifier
-                .padding(top = 6.dp)
+                .padding(top = 0.dp)
                 .clickable { viewModel.debuggable = !viewModel.debuggable },
             checked = viewModel.debuggable,
             icon = Icons.Outlined.BugReport,
             title = stringResource(R.string.patch_debuggable)
+            desc = stringResource(R.string.patch_debuggable)
         )
         SettingsCheckBox(
             modifier = Modifier.clickable { viewModel.overrideVersionCode = !viewModel.overrideVersionCode },
@@ -353,21 +354,21 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
         SettingsCheckBox(
             modifier = Modifier.clickable { viewModel.injectDex = !viewModel.injectDex },
             checked = viewModel.injectDex,
-            icon = Icons.Outlined.Code,
+            icon = Icons.Outlined.PushPin,
             title = stringResource(R.string.patch_inject_dex),
             desc = stringResource(R.string.patch_inject_dex_desc)
         )
         SettingsCheckBox(
             modifier = Modifier.clickable { viewModel.injectProvider = !viewModel.injectProvider },
             checked = viewModel.injectProvider,
-            icon = Icons.Outlined.AddCard,
+            icon = Icons.Outlined.InsertDriveFile,
             title = stringResource(R.string.patch_inject_mt_provider),
             desc = stringResource(R.string.patch_inject_mt_provider_desc)
         )
         SettingsCheckBox(
             modifier = Modifier.clickable { viewModel.outputLog = !viewModel.outputLog },
             checked = viewModel.outputLog,
-            icon = Icons.Outlined.AddCard,
+            icon = Icons.Outlined.Album,
             title = stringResource(R.string.patch_output_log_to_media),
             desc = stringResource(R.string.patch_output_log_to_media_desc)
         )
@@ -378,7 +379,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
             onClick = { bypassExpanded = true },
             surface = {
                 SettingsItem(
-                    icon = Icons.Outlined.RemoveModerator,
+                    icon = Icons.Outlined.Shield,
                     title = stringResource(R.string.patch_sigbypass),
                     desc = sigBypassLvStr(viewModel.sigBypassLevel)
                 )
