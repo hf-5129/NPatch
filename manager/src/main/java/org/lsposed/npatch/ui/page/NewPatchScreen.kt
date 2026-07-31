@@ -310,7 +310,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
             SelectionItem(
                 selected = viewModel.useManager,
                 onClick = { viewModel.useManager = true },
-                icon = Icons.Outlined.Devices,
+                icon = Icons.Outlined.Laptop,
                 title = stringResource(R.string.patch_local),
                 desc = stringResource(R.string.patch_local_desc)
             )
