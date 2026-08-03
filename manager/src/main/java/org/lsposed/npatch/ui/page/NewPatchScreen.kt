@@ -368,7 +368,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
         SettingsCheckBox(
             modifier = Modifier.clickable { viewModel.outputLog = !viewModel.outputLog },
             checked = viewModel.outputLog,
-            icon = Icons.Outlined.Album,
+            icon = Icons.Outlined.Close,
             title = stringResource(R.string.patch_output_log_to_media),
             desc = stringResource(R.string.patch_output_log_to_media_desc)
         )
