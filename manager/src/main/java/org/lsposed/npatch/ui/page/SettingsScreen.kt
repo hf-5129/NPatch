@@ -3,6 +3,8 @@ package org.lsposed.npatch.ui.page
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -267,9 +269,37 @@ private fun StorageDirectory() {
             scope.launch { snackbarHost.showSnackbar(errorText) }
         }
     }
+
+    val desc = remember(Configs.storageDirectory) {
+        Configs.storageDirectory?.let { uriStr ->
+            try {
+                val uri = Uri.parse(uriStr)
+                val docId = DocumentsContract.getTreeDocumentId(uri) // e.g. "primary:Download/NPatch"
+                val decoded = Uri.decode(docId)
+                if (decoded.startsWith("primary:")) {
+                    val pathPart = decoded.substringAfter("primary:")
+                    "/storage/emulated/0/${pathPart.trimStart('/')}"
+                } else {
+                    // 非 primary 的情况，尝试拼成 /mnt/media_rw/<uuid>/path 以便展示
+                    val parts = decoded.split(":", limit = 2)
+                    if (parts.size == 2) {
+                        val uuid = parts[0]
+                        val pathPart = parts[1]
+                        "/mnt/media_rw/$uuid/${pathPart.trimStart('/')}"
+                    } else {
+                        decoded
+                    }
+                }
+            } catch (e: Exception) {
+                // 解析失败时回退显示原始 URI
+                uriStr
+            }
+        } ?: "undefined"
+    }
+
     SettingsItem(
         title = stringResource(R.string.settings_storage_directory),
-        desc = Configs.storageDirectory ?: "undefined",
+        desc = desc,
         icon = Icons.Outlined.Folder,
         modifier = Modifier.clickable { launcher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
     )
