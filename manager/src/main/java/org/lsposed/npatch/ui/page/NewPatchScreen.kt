@@ -387,12 +387,10 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
         ) {
             repeat(3) {
                 DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = viewModel.sigBypassLevel == it, onClick = { viewModel.sigBypassLevel = it })
-                            Text(sigBypassLvStr(it))
-                        }
+                    leadingIcon = {
+                        RadioButton(selected = viewModel.sigBypassLevel == it, onClick = null)
                     },
+                    text = { Text(sigBypassLvStr(it)) },
                     onClick = {
                         viewModel.sigBypassLevel = it
                         bypassExpanded = false
