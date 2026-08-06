@@ -515,7 +515,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(Modifier.weight(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
@@ -537,7 +537,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(Modifier.weight(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
