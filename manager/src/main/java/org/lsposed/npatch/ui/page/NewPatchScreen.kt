@@ -508,7 +508,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 20.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
                         .offset(y = (-4).dp)
                 ) {
                     Button(
@@ -516,7 +516,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(24.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
@@ -531,7 +531,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 20.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
                         .offset(y = (-4).dp)
                 ) {
                     Button(
@@ -539,7 +539,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(24.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
