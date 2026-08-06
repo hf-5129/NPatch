@@ -508,7 +508,8 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 24.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 20.dp)
+                        .offset(y = (-4).dp)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
@@ -530,7 +531,8 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 24.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 20.dp)
+                        .offset(y = (-4).dp)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
