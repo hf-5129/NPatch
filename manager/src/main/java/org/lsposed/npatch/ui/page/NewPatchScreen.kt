@@ -447,7 +447,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         BoxWithConstraints(
             Modifier
                 .weight(1f)
-                .padding(start = 24.dp, end = 24.dp, top = 24.dp)
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
             ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
                 ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
@@ -508,14 +508,14 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 24.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = -4.dp, bottom = 24.dp)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(Modifier.weight(0.2f))
+                    Spacer(Modifier.weight(12.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
@@ -530,14 +530,14 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 24.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = -4.dp, bottom = 24.dp)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = { navigator.navigateUp() },
                         content = { Text(stringResource(R.string.patch_return)) }
                     )
-                    Spacer(Modifier.weight(0.2f))
+                    Spacer(Modifier.weight(12.dp))
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = {
