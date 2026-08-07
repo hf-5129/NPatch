@@ -15,9 +15,14 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -443,7 +448,13 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         }
     }
 
-    Column(modifier.fillMaxSize()) {
+    // 把整个 Column 设置为 animateContentSize，以便底部按钮出现时日志区域高度变化有平滑动画
+    Column(modifier.fillMaxSize().then(modifier).animateContentSize(
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
+        )
+    )) {
         BoxWithConstraints(
             Modifier
                 .weight(1f)
@@ -478,79 +489,95 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
             }
         }
 
-        // 按钮区域 - 独立的控件
-        when (viewModel.patchState) {
-            PatchState.PATCHING -> BackHandler {}
-            PatchState.FINISHED -> {
-                val installFailed = stringResource(R.string.patch_install_failed)
-                val copyError = stringResource(R.string.copy_error)
-                var installation by remember { mutableStateOf<NewPatchViewModel.InstallMethod?>(null) }
+        // 底部按钮区：用 AnimatedVisibility 做入场/退出动画，配合 Column.animateContentSize 让日志区与按钮的布局变化平滑
+        // 先处理 PATCHING 的拦截（阻止返回）
+        if (viewModel.patchState == PatchState.PATCHING) {
+            BackHandler {}
+        }
 
-                val onFinish: (Int, String?) -> Unit = { status, message ->
-                    scope.launch {
-                        if (status == PackageInstaller.STATUS_SUCCESS) {
-                            Log.i(TAG, "Install reported success, waiting for broadcast to navigate.")
-                        } else if (status != NPackageManager.STATUS_USER_CANCELLED) {
-                            val result = snackbarHost.showSnackbar(installFailed, copyError)
-                            if (result == SnackbarResult.ActionPerformed) {
-                                val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                cm.setPrimaryClip(ClipData.newPlainText("NPatch", message))
-                            }
-                        }
-                        installation = null
+        // FINISHED 的按钮与安装对话/逻辑需要保持状态 —— 将这些状态声明在外层以保证在可见性切换时不会丢失
+        val installFailed = stringResource(R.string.patch_install_failed)
+        val copyError = stringResource(R.string.copy_error)
+        var installation by remember { mutableStateOf<NewPatchViewModel.InstallMethod?>(null) }
+
+        val onFinish: (Int, String?) -> Unit = { status, message ->
+            scope.launch {
+                if (status == PackageInstaller.STATUS_SUCCESS) {
+                    Log.i(TAG, "Install reported success, waiting for broadcast to navigate.")
+                } else if (status != NPackageManager.STATUS_USER_CANCELLED) {
+                    val result = snackbarHost.showSnackbar(installFailed, copyError)
+                    if (result == SnackbarResult.ActionPerformed) {
+                        val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("NPatch", message))
                     }
                 }
-                when (installation) {
-                    NewPatchViewModel.InstallMethod.SYSTEM -> InstallDialog2(viewModel.patchApp, onFinish)
-                    NewPatchViewModel.InstallMethod.SHIZUKU -> InstallDialog(viewModel.patchApp, onFinish)
-                    null -> {}
-                }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
-                        .offset(y = (-4).dp)
-                ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = { navigator.navigateUp() },
-                        content = { Text(stringResource(R.string.patch_return)) }
-                    )
-                    Spacer(modifier = Modifier.width(24.dp))
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
-                            Log.d(TAG, "Installation method: $installation")
-                        },
-                        content = { Text(stringResource(R.string.install)) }
-                    )
-                }
+                installation = null
             }
-            PatchState.ERROR -> {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
-                        .offset(y = (-4).dp)
-                ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = { navigator.navigateUp() },
-                        content = { Text(stringResource(R.string.patch_return)) }
-                    )
-                    Spacer(modifier = Modifier.width(24.dp))
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
-                        },
-                        content = { Text(stringResource(R.string.copy_error)) }
-                    )
-                }
+        }
+
+        // FINISHED 按钮区（带入场动画）
+        AnimatedVisibility(
+            visible = (viewModel.patchState == PatchState.FINISHED),
+            enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+            exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
+        ) {
+            // 若安装方法被选中，展示对应的安装对话（InstallDialog / InstallDialog2）
+            when (installation) {
+                NewPatchViewModel.InstallMethod.SYSTEM -> InstallDialog2(viewModel.patchApp, onFinish)
+                NewPatchViewModel.InstallMethod.SHIZUKU -> InstallDialog(viewModel.patchApp, onFinish)
+                null -> {}
             }
-            else -> Unit
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
+                    .offset(y = (-4).dp)
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { navigator.navigateUp() },
+                    content = { Text(stringResource(R.string.patch_return)) }
+                )
+                Spacer(modifier = Modifier.width(24.dp))
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
+                        Log.d(TAG, "Installation method: $installation")
+                    },
+                    content = { Text(stringResource(R.string.install)) }
+                )
+            }
+        }
+
+        // ERROR 的按钮区（带入场动画）
+        AnimatedVisibility(
+            visible = (viewModel.patchState == PatchState.ERROR),
+            enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+            exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 16.dp)
+                    .offset(y = (-4).dp)
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { navigator.navigateUp() },
+                    content = { Text(stringResource(R.string.patch_return)) }
+                )
+                Spacer(modifier = Modifier.width(24.dp))
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
+                    },
+                    content = { Text(stringResource(R.string.copy_error)) }
+                )
+            }
         }
     }
 }
