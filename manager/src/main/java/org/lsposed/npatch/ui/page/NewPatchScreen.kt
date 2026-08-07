@@ -448,17 +448,18 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         }
     }
 
-    // 把整个 Column 设置为 animateContentSize，以便底部按钮出现时日志区域高度变化有平滑动画
-    Column(modifier.fillMaxSize().then(modifier).animateContentSize(
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
-        )
-    )) {
+    // 把尺寸动画应用到日志容器（BoxWithConstraints），避免外层 Column 与 LazyColumn 的测量冲突导致顶部空白
+    Column(modifier = modifier.fillMaxSize()) {
         BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                )
         ) {
             ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
                 ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
@@ -466,8 +467,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
+                            .fillMaxSize()
                             .clip(RoundedCornerShape(32.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(horizontal = 24.dp, vertical = 18.dp)
@@ -489,7 +489,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
             }
         }
 
-        // 底部按钮区：用 AnimatedVisibility 做入场/退出动画，配合 Column.animateContentSize 让日志区与按钮的布局变化平滑
+        // 底部按钮区：用 AnimatedVisibility 做入场/退出动画，配合日志容器的 animateContentSize 让日志区与按钮的布局变化平滑
         // 先处理 PATCHING 的拦截（阻止返回）
         if (viewModel.patchState == PatchState.PATCHING) {
             BackHandler {}
