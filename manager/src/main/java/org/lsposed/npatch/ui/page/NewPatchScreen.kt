@@ -50,6 +50,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.result.NavResult
 import com.ramcosta.composedestinations.result.ResultRecipient
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.lsposed.npatch.lspApp
 import org.lsposed.npatch.R
@@ -448,7 +449,10 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         }
     }
 
-    // 把尺寸动画从日志容器移到外层 Column（包含日志区和底部按钮区），避免 LazyColumn 在动画期间保持不变的 scroll offset 导致日志内容看起来不跟随底部一起移动
+    // 把尺寸动画从日志容器移到外层 Column（包含日志区和底部按钮区），并把 LazyColumn 的 scrollState 提升到外层，
+    // 在日志数量或底部区域可见性变化时强制滚动到底部以保证日志内容“跟随”底部动画
+    val scrollState = rememberLazyListState()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -466,7 +470,6 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         ) {
             ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
                 ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
-                    val scrollState = rememberLazyListState()
                     LazyColumn(
                         state = scrollState,
                         modifier = Modifier
@@ -482,13 +485,18 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                             }
                         }
                     }
-
-                    LaunchedEffect(scrollState.lastItemIndex) {
-                        if (scrollState.lastItemIndex != null && !scrollState.isScrolledToEnd) {
-                            scrollState.animateScrollToItem(scrollState.lastItemIndex!!)
-                        }
-                    }
                 }
+            }
+        }
+
+        // 当 logs 数量变化或 patchState 变化（例如底部按钮从不可见到可见），尝试滚动到底部。
+        // 加一点延迟以等待 layout/animation 帧，让 scroll 操作与动画配合更平滑。
+        LaunchedEffect(viewModel.logs.size, viewModel.patchState) {
+            // 仅在还未手动滚动到末尾时才自动滚动
+            delay(80)
+            val last = scrollState.layoutInfo.totalItemsCount - 1
+            if (last >= 0 && !scrollState.isScrolledToEnd) {
+                scrollState.animateScrollToItem(last)
             }
         }
 
