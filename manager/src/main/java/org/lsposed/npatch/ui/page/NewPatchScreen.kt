@@ -482,7 +482,6 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                                         stiffness = Spring.StiffnessMedium
                                     )
                                 )
-                                .animateItemPlacement()
                             when (log.first) {
                                 Log.DEBUG, Log.INFO -> Text(text = log.second, modifier = textModifier)
                                 Log.ERROR -> Text(text = log.second, modifier = textModifier, color = MaterialTheme.colorScheme.error)
