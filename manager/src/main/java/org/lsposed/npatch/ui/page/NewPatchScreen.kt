@@ -472,15 +472,26 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(horizontal = 24.dp, vertical = 18.dp)
                     ) {
-                        items(viewModel.logs) {
-                            when (it.first) {
-                                Log.DEBUG, Log.INFO -> Text(text = it.second)
-                                Log.ERROR -> Text(text = it.second, color = MaterialTheme.colorScheme.error)
+                        // 为每条日志内容添加尺寸动画并启用 animateItemPlacement() 以使日志项随容器高度变化平滑移动
+                        items(viewModel.logs) { log ->
+                            val textModifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMedium
+                                    )
+                                )
+                                .animateItemPlacement()
+                            when (log.first) {
+                                Log.DEBUG, Log.INFO -> Text(text = log.second, modifier = textModifier)
+                                Log.ERROR -> Text(text = log.second, modifier = textModifier, color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
 
-                    LaunchedEffect(scrollState.lastItemIndex) {
+                    // 当最后一项索引变化或容器高度变化时尝试滚动到底部，确保日志保持在容器最低处
+                    LaunchedEffect(scrollState.lastItemIndex, maxHeight) {
                         if (scrollState.lastItemIndex != null && !scrollState.isScrolledToEnd) {
                             scrollState.animateScrollToItem(scrollState.lastItemIndex!!)
                         }
