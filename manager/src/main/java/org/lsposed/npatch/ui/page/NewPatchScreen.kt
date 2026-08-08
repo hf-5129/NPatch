@@ -448,18 +448,21 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         }
     }
 
-    // 把尺寸动画应用到日志容器（BoxWithConstraints），避免外层 Column 与 LazyColumn 的测量冲突导致顶部空白
-    Column(modifier = modifier.fillMaxSize()) {
+    // 把尺寸动画从日志容器移到外层 Column（包含日志区和底部按钮区），避免 LazyColumn 在动画期间保持不变的 scroll offset 导致日志内容看起来不跟随底部一起移动
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
+    ) {
         BoxWithConstraints(
             Modifier
                 .weight(1f)
                 .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
-                .animateContentSize(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
-                )
         ) {
             ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
                 ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
@@ -472,25 +475,15 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(horizontal = 24.dp, vertical = 18.dp)
                     ) {
-                        // 为每条日志内容添加尺寸动画并启用 animateItemPlacement() 以使日志项随容器高度变化平滑移动
-                        items(viewModel.logs) { log ->
-                            val textModifier = Modifier
-                                .fillMaxWidth()
-                                .animateContentSize(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioNoBouncy,
-                                        stiffness = Spring.StiffnessMedium
-                                    )
-                                )
-                            when (log.first) {
-                                Log.DEBUG, Log.INFO -> Text(text = log.second, modifier = textModifier)
-                                Log.ERROR -> Text(text = log.second, modifier = textModifier, color = MaterialTheme.colorScheme.error)
+                        items(viewModel.logs) {
+                            when (it.first) {
+                                Log.DEBUG, Log.INFO -> Text(text = it.second)
+                                Log.ERROR -> Text(text = it.second, color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
 
-                    // 当最后一项索引变化或容器高度变化时尝试滚动到底部，确保日志保持在容器最低处
-                    LaunchedEffect(scrollState.lastItemIndex, maxHeight) {
+                    LaunchedEffect(scrollState.lastItemIndex) {
                         if (scrollState.lastItemIndex != null && !scrollState.isScrolledToEnd) {
                             scrollState.animateScrollToItem(scrollState.lastItemIndex!!)
                         }
@@ -499,7 +492,7 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
             }
         }
 
-        // 底部按钮区：用 AnimatedVisibility 做入场/退出动画，配合日志容器的 animateContentSize 让日志区与按钮的布局变化平滑
+        // 底部按钮区：用 AnimatedVisibility 做入场/退出动画，配合外层 Column 的 animateContentSize 让日志区与按钮的布局变化平滑
         // 先处理 PATCHING 的拦截（阻止返回）
         if (viewModel.patchState == PatchState.PATCHING) {
             BackHandler {}
