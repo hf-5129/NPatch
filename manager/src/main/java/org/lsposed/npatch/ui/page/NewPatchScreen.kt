@@ -495,9 +495,7 @@ private fun DoPatchBody(
     }
 
     BoxWithConstraints(modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)) {
-        val shellBoxMaxHeight =
-            if (viewModel.patchState == PatchState.PATCHING) maxHeight
-            else maxHeight - ButtonDefaults.MinHeight - 12.dp
+        val shellBoxMaxHeight = maxHeight
 
         Column(
             Modifier
