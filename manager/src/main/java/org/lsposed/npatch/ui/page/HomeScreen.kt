@@ -104,8 +104,9 @@ private fun ShizukuCard() {
         }
     }
 
-    Card(
+    ElevatedCard(
         shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = run {
             if (ShizukuApi.isPermissionGranted) MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.errorContainer
@@ -173,8 +174,9 @@ private fun InfoCard() {
     val context = LocalContext.current
     val snackbarHost = LocalSnackbarHost.current
     val scope = rememberCoroutineScope()
-    Card(
-        shape = RoundedCornerShape(16.dp)
+    ElevatedCard(
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -223,8 +225,9 @@ private fun InfoCard() {
 @Preview
 @Composable
 private fun SupportCard() {
-    Card(
-        shape = RoundedCornerShape(16.dp)
+    ElevatedCard(
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
