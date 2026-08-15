@@ -15,9 +15,12 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -443,108 +446,153 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
         }
     }
 
+    // installation state lifted so the floating button can also trigger installation
+    var installation by remember { mutableStateOf<NewPatchViewModel.InstallMethod?>(null) }
+
     BoxWithConstraints(modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)) {
         val shellBoxMaxHeight =
             if (viewModel.patchState == PatchState.PATCHING) maxHeight
             else maxHeight - ButtonDefaults.MinHeight - 12.dp
-        Column(
-            Modifier
-                .fillMaxSize()
-                .wrapContentHeight()
-                .animateContentSize(spring(stiffness = Spring.StiffnessLow))
-        ) {
-            ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
-                ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
-                    val scrollState = rememberLazyListState()
-                    LazyColumn(
-                        state = scrollState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = shellBoxMaxHeight)
-                            .clip(RoundedCornerShape(32.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant) // Replaced 'brush' with a theme color
-                            .padding(horizontal = 24.dp, vertical = 18.dp)
-                    ) {
-                        items(viewModel.logs) {
-                            when (it.first) {
-                                Log.DEBUG, Log.INFO -> Text(text = it.second)
-                                Log.ERROR -> Text(text = it.second, color = MaterialTheme.colorScheme.error)
+
+        // Use a Box so we can overlay the floating button over other content
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .wrapContentHeight()
+                    .animateContentSize(spring(stiffness = Spring.StiffnessLow))
+            ) {
+                ShimmerAnimation(enabled = viewModel.patchState == PatchState.PATCHING) {
+                    ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)) {
+                        val scrollState = rememberLazyListState()
+                        LazyColumn(
+                            state = scrollState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = shellBoxMaxHeight)
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant) // Replaced 'brush' with a theme color
+                                .padding(horizontal = 24.dp, vertical = 18.dp)
+                        ) {
+                            items(viewModel.logs) {
+                                when (it.first) {
+                                    Log.DEBUG, Log.INFO -> Text(text = it.second)
+                                    Log.ERROR -> Text(text = it.second, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+
+                        LaunchedEffect(scrollState.lastItemIndex) {
+                            if (scrollState.lastItemIndex != null && !scrollState.isScrolledToEnd) {
+                                scrollState.animateScrollToItem(scrollState.lastItemIndex!!)
                             }
                         }
                     }
+                }
 
-                    LaunchedEffect(scrollState.lastItemIndex) {
-                        if (scrollState.lastItemIndex != null && !scrollState.isScrolledToEnd) {
-                            scrollState.animateScrollToItem(scrollState.lastItemIndex!!)
+                when (viewModel.patchState) {
+                    PatchState.PATCHING -> BackHandler {}
+                    PatchState.FINISHED -> {
+                        // val installSuccessfully = stringResource(R.string.patch_install_successfully) // 移交给 BroadcastReceiver 处理
+                        val installFailed = stringResource(R.string.patch_install_failed)
+                        val copyError = stringResource(R.string.copy_error)
+
+                        val onFinish: (Int, String?) -> Unit = { status, message ->
+                            scope.launch {
+                                if (status == PackageInstaller.STATUS_SUCCESS) {
+                                    Log.i(TAG, "Install reported success, waiting for broadcast to navigate.")
+                                } else if (status != NPackageManager.STATUS_USER_CANCELLED) {
+                                    // 安装失败处理
+                                    val result = snackbarHost.showSnackbar(installFailed, copyError)
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        cm.setPrimaryClip(ClipData.newPlainText("NPatch", message))
+                                    }
+                                }
+                                installation = null // Reset installation state
+                            }
+                        }
+
+                        when (installation) {
+                            NewPatchViewModel.InstallMethod.SYSTEM -> InstallDialog2(viewModel.patchApp, onFinish)
+                            NewPatchViewModel.InstallMethod.SHIZUKU -> InstallDialog(viewModel.patchApp, onFinish)
+                            null -> {}
+                        }
+                        Row(Modifier.padding(top = 12.dp)) {
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = { navigator.navigateUp() },
+                                content = { Text(stringResource(R.string.patch_return)) }
+                            )
+                            Spacer(Modifier.weight(0.2f))
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
+                                    Log.d(TAG, "Installation method: $installation")
+                                },
+                                content = { Text(stringResource(R.string.install)) }
+                            )
                         }
                     }
+                    PatchState.ERROR -> {
+                        Row(Modifier.padding(top = 12.dp)) {
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = { navigator.navigateUp() },
+                                content = { Text(stringResource(R.string.patch_return)) }
+                            )
+                            Spacer(Modifier.weight(0.2f))
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
+                                },
+                                content = { Text(stringResource(R.string.copy_error)) }
+                            )
+                        }
+                    }
+                    else -> Unit
                 }
             }
 
-            when (viewModel.patchState) {
-                PatchState.PATCHING -> BackHandler {}
-                PatchState.FINISHED -> {
-                    // val installSuccessfully = stringResource(R.string.patch_install_successfully) // 移交给 BroadcastReceiver 处理
-                    val installFailed = stringResource(R.string.patch_install_failed)
-                    val copyError = stringResource(R.string.copy_error)
-                    var installation by remember { mutableStateOf<NewPatchViewModel.InstallMethod?>(null) }
+            // Floating action button bottom-right: same style as "开始修补"
+            val showFloating =
+                (viewModel.patchState == PatchState.FINISHED || viewModel.patchState == PatchState.ERROR) && viewModel.logs.isNotEmpty()
 
-                    val onFinish: (Int, String?) -> Unit = { status, message ->
-                        scope.launch {
-                            if (status == PackageInstaller.STATUS_SUCCESS) {
-                                Log.i(TAG, "Install reported success, waiting for broadcast to navigate.")
-                            } else if (status != NPackageManager.STATUS_USER_CANCELLED) {
-                                // 安装失败处理
-                                val result = snackbarHost.showSnackbar(installFailed, copyError)
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    cm.setPrimaryClip(ClipData.newPlainText("NPatch", message))
-                                }
-                            }
-                            installation = null // Reset installation state
+            AnimatedVisibility(
+                visible = showFloating,
+                enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp)
+            ) {
+                // Dynamic text/icon to match the buttons under the logs:
+                val fabText = when (viewModel.patchState) {
+                    PatchState.FINISHED -> stringResource(R.string.install)
+                    PatchState.ERROR -> stringResource(R.string.copy_error)
+                    else -> stringResource(R.string.patch_start)
+                }
+                val fabIcon = when (viewModel.patchState) {
+                    PatchState.FINISHED -> Icons.Outlined.InstallMobile
+                    PatchState.ERROR -> Icons.Outlined.ContentCopy
+                    else -> Icons.Outlined.AutoFixHigh
+                }
+
+                ExtendedFloatingActionButton(
+                    text = { Text(fabText) },
+                    icon = { Icon(fabIcon, null) },
+                    onClick = {
+                        if (viewModel.patchState == PatchState.FINISHED) {
+                            installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
+                            Log.d(TAG, "Installation method (floating button): $installation")
+                        } else if (viewModel.patchState == PatchState.ERROR) {
+                            val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
                         }
                     }
-                    when (installation) {
-                        NewPatchViewModel.InstallMethod.SYSTEM -> InstallDialog2(viewModel.patchApp, onFinish)
-                        NewPatchViewModel.InstallMethod.SHIZUKU -> InstallDialog(viewModel.patchApp, onFinish)
-                        null -> {}
-                    }
-                    Row(Modifier.padding(top = 12.dp)) {
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = { navigator.navigateUp() },
-                            content = { Text(stringResource(R.string.patch_return)) }
-                        )
-                        Spacer(Modifier.weight(0.2f))
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
-                                Log.d(TAG, "Installation method: $installation")
-                            },
-                            content = { Text(stringResource(R.string.install)) }
-                        )
-                    }
-                }
-                PatchState.ERROR -> {
-                    Row(Modifier.padding(top = 12.dp)) {
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = { navigator.navigateUp() },
-                            content = { Text(stringResource(R.string.patch_return)) }
-                        )
-                        Spacer(Modifier.weight(0.2f))
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
-                            },
-                            content = { Text(stringResource(R.string.copy_error)) }
-                        )
-                    }
-                }
-                else -> Unit
+                )
             }
         }
     }
