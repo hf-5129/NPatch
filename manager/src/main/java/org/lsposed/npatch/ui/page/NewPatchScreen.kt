@@ -555,45 +555,17 @@ private fun DoPatchBody(
                         }
                     }
 
+                    // keep showing install dialogs if installation was triggered via FAB
                     when (installation) {
                         NewPatchViewModel.InstallMethod.SYSTEM -> InstallDialog2(viewModel.patchApp, onFinish)
                         NewPatchViewModel.InstallMethod.SHIZUKU -> InstallDialog(viewModel.patchApp, onFinish)
                         null -> {}
                     }
-                    Row(Modifier.padding(top = 12.dp)) {
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = { navigator.navigateUp() },
-                            content = { Text(stringResource(R.string.patch_return)) }
-                        )
-                        Spacer(Modifier.weight(0.2f))
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                setInstallation(if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU)
-                                Log.d(TAG, "Installation method: $installation")
-                            },
-                            content = { Text(stringResource(R.string.install)) }
-                        )
-                    }
+
+                    // Removed the bottom Row with "返回" and "安装" buttons per request.
                 }
                 PatchState.ERROR -> {
-                    Row(Modifier.padding(top = 12.dp)) {
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = { navigator.navigateUp() },
-                            content = { Text(stringResource(R.string.patch_return)) }
-                        )
-                        Spacer(Modifier.weight(0.2f))
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
-                            },
-                            content = { Text(stringResource(R.string.copy_error)) }
-                        )
-                    }
+                    // Removed the bottom Row with "返回" and "复制错误" buttons per request.
                 }
                 else -> Unit
             }
