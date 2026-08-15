@@ -19,8 +19,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -563,7 +563,8 @@ private fun DoPatchBody(modifier: Modifier, navigator: DestinationsNavigator) {
 
             AnimatedVisibility(
                 visible = showFloating,
-                enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+                enter = scaleIn(),
+                exit = scaleOut(),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
