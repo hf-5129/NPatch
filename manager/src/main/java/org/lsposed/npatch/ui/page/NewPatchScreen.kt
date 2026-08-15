@@ -338,21 +338,21 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
         Text(
             text = viewModel.patchApp.label,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
         Text(
             text = viewModel.patchApp.app.packageName,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
         Text(
             text = stringResource(R.string.patch_mode),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = 24.dp, bottom = 12.dp)
+                .padding(top = 16.dp, bottom = 16.dp)
         )
-        SelectionColumn(Modifier.padding(horizontal = 24.dp)) {
+        SelectionColumn(Modifier.padding(horizontal = 16.dp)) {
             SelectionItem(
                 selected = viewModel.useManager,
                 onClick = { viewModel.useManager = true },
@@ -374,7 +374,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
                 }
             )
         }
-        SettingsEditor(Modifier.padding(top = 6.dp),
+        SettingsEditor(Modifier.padding(horizontal = 16.dp, top = 6.dp),
             stringResource(R.string.patch_new_package),
             viewModel.newPackageName,
             onValueChange = {
