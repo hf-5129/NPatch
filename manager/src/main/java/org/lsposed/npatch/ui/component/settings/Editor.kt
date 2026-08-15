@@ -26,12 +26,11 @@ fun SettingsEditor(
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+        Column(Modifier.weight(1f)) {
             Column {
                 OutlinedTextField(
                     value = text,
@@ -44,7 +43,6 @@ fun SettingsEditor(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
                 )
             }
         }
