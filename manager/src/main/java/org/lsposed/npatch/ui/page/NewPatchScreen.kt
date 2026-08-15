@@ -91,7 +91,6 @@ fun NewPatchScreen(
     val viewModel = viewModel<NewPatchViewModel>()
     val snackbarHost = LocalSnackbarHost.current
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val errorUnknown = stringResource(R.string.error_unknown)
 
     // lifted installation state so FAB in Scaffold and DoPatchBody can share it
@@ -194,42 +193,41 @@ fun NewPatchScreen(
                     }
                 },
                 floatingActionButton = {
-                    when {
-                        viewModel.patchState == PatchState.CONFIGURING -> {
-                            ConfiguringFab()
-                        }
-                        showFinishFab -> {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = scaleIn(),
-                                exit = scaleOut(),
-                            ) {
-                                // Dynamic text/icon to match the buttons under the logs:
-                                val fabText = when (viewModel.patchState) {
-                                    PatchState.FINISHED -> stringResource(R.string.install)
-                                    PatchState.ERROR -> stringResource(R.string.copy_error)
-                                    else -> stringResource(R.string.patch_start)
-                                }
-                                val fabIcon = when (viewModel.patchState) {
-                                    PatchState.FINISHED -> Icons.Outlined.InstallMobile
-                                    PatchState.ERROR -> Icons.Outlined.ContentCopy
-                                    else -> Icons.Outlined.AutoFixHigh
-                                }
-
-                                ExtendedFloatingActionButton(
-                                    text = { Text(fabText) },
-                                    icon = { Icon(fabIcon, null) },
-                                    onClick = {
-                                        if (viewModel.patchState == PatchState.FINISHED) {
-                                            installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
-                                            Log.d(TAG, "Installation method (scaffold FAB): $installation")
-                                        } else if (viewModel.patchState == PatchState.ERROR) {
-                                            val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                            cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
-                                        }
-                                    }
-                                )
+                    // If configuring, show the "start patch" FAB (no animation change).
+                    if (viewModel.patchState == PatchState.CONFIGURING) {
+                        ConfiguringFab()
+                    } else {
+                        // Use AnimatedVisibility bound to showFinishFab so scale animations run on state changes
+                        AnimatedVisibility(
+                            visible = showFinishFab,
+                            enter = scaleIn(),
+                            exit = scaleOut(),
+                        ) {
+                            // Dynamic text/icon to match the buttons under the logs:
+                            val fabText = when (viewModel.patchState) {
+                                PatchState.FINISHED -> stringResource(R.string.install)
+                                PatchState.ERROR -> stringResource(R.string.copy_error)
+                                else -> stringResource(R.string.patch_start)
                             }
+                            val fabIcon = when (viewModel.patchState) {
+                                PatchState.FINISHED -> Icons.Outlined.InstallMobile
+                                PatchState.ERROR -> Icons.Outlined.ContentCopy
+                                else -> Icons.Outlined.AutoFixHigh
+                            }
+
+                            ExtendedFloatingActionButton(
+                                text = { Text(fabText) },
+                                icon = { Icon(fabIcon, null) },
+                                onClick = {
+                                    if (viewModel.patchState == PatchState.FINISHED) {
+                                        installation = if (!ShizukuApi.isPermissionGranted) NewPatchViewModel.InstallMethod.SYSTEM else NewPatchViewModel.InstallMethod.SHIZUKU
+                                        Log.d(TAG, "Installation method (scaffold FAB): $installation")
+                                    } else if (viewModel.patchState == PatchState.ERROR) {
+                                        val cm = lspApp.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        cm.setPrimaryClip(ClipData.newPlainText("NPatch", viewModel.logs.joinToString(separator = "\n") { it.second }))
+                                    }
+                                }
+                            )
                         }
                     }
                 }
