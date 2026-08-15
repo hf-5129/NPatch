@@ -83,7 +83,7 @@ fun SelectionColumn(
     content: @Composable() (SelectionColumnScope.() -> Unit)
 ) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(32.dp)),
+        modifier = modifier.clip(RoundedCornerShape(16.dp)),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         content = { SelectionColumnScope.content() }
     )
