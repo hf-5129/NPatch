@@ -374,7 +374,7 @@ private fun PatchOptionsBody(modifier: Modifier, onAddEmbed: () -> Unit) {
                 }
             )
         }
-        SettingsEditor(Modifier.padding(horizontal = 16.dp, top = 6.dp),
+        SettingsEditor(Modifier.padding(top = 6.dp),
             stringResource(R.string.patch_new_package),
             viewModel.newPackageName,
             onValueChange = {
