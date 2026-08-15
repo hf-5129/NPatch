@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -104,8 +105,9 @@ private fun ShizukuCard() {
         }
     }
 
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(containerColor = run {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = run {
             if (ShizukuApi.isPermissionGranted) MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.errorContainer
         })
@@ -174,7 +176,9 @@ private fun InfoCard() {
     val context = LocalContext.current
     val snackbarHost = LocalSnackbarHost.current
     val scope = rememberCoroutineScope()
-    ElevatedCard {
+    Card(
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -222,7 +226,9 @@ private fun InfoCard() {
 @Preview
 @Composable
 private fun SupportCard() {
-    ElevatedCard {
+    Card(
+        shape = RoundedCornerShape(16.dp)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
