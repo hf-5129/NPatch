@@ -494,7 +494,7 @@ private fun DoPatchBody(
         }
     }
 
-    BoxWithConstraints(modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)) {
+    BoxWithConstraints(modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
         val shellBoxMaxHeight = maxHeight
 
         Column(
@@ -511,9 +511,9 @@ private fun DoPatchBody(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = shellBoxMaxHeight)
-                            .clip(RoundedCornerShape(32.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(horizontal = 24.dp, vertical = 18.dp)
+                            .padding(horizontal = 24.dp, vertical = 24.dp)
                     ) {
                         items(viewModel.logs) {
                             when (it.first) {
